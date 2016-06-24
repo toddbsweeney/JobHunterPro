@@ -8,6 +8,7 @@ using System.Web;
 using System.Web.Mvc;
 using JobHunter.DAL;
 using JobHunter.Models;
+using PagedList;
 
 namespace JobHunter.Controllers
 {
@@ -16,9 +17,38 @@ namespace JobHunter.Controllers
         private JobHunterContext db = new JobHunterContext();
 
         // GET: Company
-        public ActionResult Index()
+        public ActionResult Index(string sortOrder, string currentFilter, string searchString, int? page)
         {
-            return View(db.Companies.ToList());
+            ViewBag.CurrentSort = sortOrder;
+            ViewBag.NameSortParm = string.IsNullOrEmpty(sortOrder) ? "Name_desc" : "";
+            
+            var Companies = from c in db.Companies
+                            select c;
+            //Do some searching!
+            if (searchString != null)
+            {
+                page = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+
+            ViewBag.CurrentFilter = searchString;
+
+            switch (sortOrder)
+            {
+                case "Name_desc":
+                    Companies = Companies.OrderByDescending(c => c.CompanyName);
+                    break;
+                default:
+                    Companies = Companies.OrderBy(c => c.CompanyName);
+                    break;
+            }
+
+            int pageSize = 2;
+            int pageNumber = (page ?? 1);
+            return View(Companies.ToPagedList(pageNumber, pageSize));
         }
 
         // GET: Company/Details/5
@@ -47,13 +77,21 @@ namespace JobHunter.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "CompanyID,CompanyName,AddressOne,AddressTwo,City,State,Zip,PortlandHQ,Website,Employees,Notes")] Company company)
+        public ActionResult Create([Bind(Include = "CompanyName,AddressOne,AddressTwo,City,State,Zip,PortlandHQ,Website,Employees,Notes")] Company company)
         {
-            if (ModelState.IsValid)
+            try
             {
-                db.Companies.Add(company);
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                if (ModelState.IsValid)
+                {
+                    db.Companies.Add(company);
+                    db.SaveChanges();
+                    return RedirectToAction("Index");
+                }
+            } //try
+            catch (DataException /*dex*/)
+            {
+                //Log the error
+                ModelState.AddModelError("", "Unable to save changes.  Try again.  If the problem persists...uhhhh...try to fix it?");
             }
 
             return View(company);
@@ -77,26 +115,44 @@ namespace JobHunter.Controllers
         // POST: Company/Edit/5
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
+        [HttpPost, ActionName("Edit")]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "CompanyID,CompanyName,AddressOne,AddressTwo,City,State,Zip,PortlandHQ,Website,Employees,Notes")] Company company)
+        public ActionResult EditPost(int? id)
         {
-            if (ModelState.IsValid)
+            // No ID?  Thats a problem.
+            if (id == null)
             {
-                db.Entry(company).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            return View(company);
+
+            var CompanyToUpdate = db.Companies.Find(id);
+            if (TryUpdateModel(CompanyToUpdate, "", new string[] { "CompanyName","AddressOne","AddressTwo","City","State","Zip","PortlandHQ","Website","Notes"}))
+            {
+                try
+                {
+                    db.SaveChanges();
+                    return RedirectToAction("Index");
+                }
+                catch (DataException)
+                {
+                    ModelState.AddModelError("", "Unable to Save changes...You should probably give up");
+                }
+            }
+            return View(CompanyToUpdate);
         }
 
         // GET: Company/Delete/5
-        public ActionResult Delete(int? id)
+        public ActionResult Delete(int? id, bool? saveChangesError=false)
         {
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
+            if (saveChangesError.GetValueOrDefault())
+            {
+                ViewBag.ErrorMessage = "Delete Failure, try again and again...and again.";
+            }
+
             Company company = db.Companies.Find(id);
             if (company == null)
             {
@@ -106,13 +162,21 @@ namespace JobHunter.Controllers
         }
 
         // POST: Company/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
+        public ActionResult Delete(int id)
         {
-            Company company = db.Companies.Find(id);
-            db.Companies.Remove(company);
-            db.SaveChanges();
+            try
+            {
+                Company company = db.Companies.Find(id);
+                db.Companies.Remove(company);
+                db.SaveChanges();
+            }
+            catch (DataException)
+            {
+                return RedirectToAction("Delete", new { id = id, saveChangesError = true });
+            }
+
             return RedirectToAction("Index");
         }
 

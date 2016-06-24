@@ -1,45 +1,37 @@
-﻿@model IEnumerable<JobHunter.Models.Company>
+﻿@model PagedList.IPagedList<JobHunter.Models.Company>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Companies";
 }
 
-<h2>Index</h2>
+<h2>Companies</h2>
 
 <p>
     @Html.ActionLink("Create New", "Create")
 </p>
+
+@using (Html.BeginForm("Index","Company",FormMethod.Get))
+{
+    <p>
+        Find by company name: @Html.TextBox("SearchString", ViewBag.CurrenFilter as string)
+        <input type="submit" value="Search" />
+    </p>
+}
 <table class="table">
     <tr>
         <th>
-            @Html.DisplayNameFor(model => model.CompanyName)
+            @Html.ActionLink("Company Name", "Index", new { sortOrder = ViewBag.NameSortParm, currentFilter=ViewBag.CurrentFilter })
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.AddressOne)
+            Headquarterd in Portland
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.AddressTwo)
+            Website
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.City)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.State)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Zip)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.PortlandHQ)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Website)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Employees)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Notes)
+            Notes
         </th>
         <th></th>
     </tr>
@@ -50,28 +42,10 @@
             @Html.DisplayFor(modelItem => item.CompanyName)
         </td>
         <td>
-            @Html.DisplayFor(modelItem => item.AddressOne)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.AddressTwo)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.City)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.State)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Zip)
-        </td>
-        <td>
             @Html.DisplayFor(modelItem => item.PortlandHQ)
         </td>
         <td>
             @Html.DisplayFor(modelItem => item.Website)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Employees)
         </td>
         <td>
             @Html.DisplayFor(modelItem => item.Notes)
@@ -85,3 +59,7 @@
 }
 
 </table>
+<br/>
+Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+
+@Html.PagedListPager(Model, Page => Url.Action("Index", new {Page, sortOrder = ViewBag.CurrentSort, currentFilter = ViewBag.CurrentFilter }))
