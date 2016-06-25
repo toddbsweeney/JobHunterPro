@@ -1,7 +1,28 @@
-﻿@{
-    ViewBag.Title = "About";
-}
-<h2>@ViewBag.Title.</h2>
-<h3>@ViewBag.Message</h3>
+﻿@model IEnumerable<JobHunter.ViewModels.CompanyHQGroup>
+    @{ 
+        ViewBag.Title = "Company HQ Stats";
+    }
+<h2> Company HQ Stats</h2>
 
-<p>Use this area to provide additional information.</p>
+<table>
+    <tr>
+        <th>
+            Portland HQ?
+        </th>
+        <th>
+            Count
+        </th>
+    </tr> 
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelitem => item.HQStatus)
+            </td>
+            <td>
+                @item.CompanyCount
+            </td>
+        </tr>
+    }
+</table>
