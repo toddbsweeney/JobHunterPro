@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using JobHunter.DAL;
 using JobHunter.Models;
 using PagedList;
+using System.Data.Entity.Infrastructure;
 
 namespace JobHunter.Controllers
 {
@@ -88,7 +89,7 @@ namespace JobHunter.Controllers
                     return RedirectToAction("Index");
                 }
             } //try
-            catch (DataException /*dex*/)
+            catch (RetryLimitExceededException /*dex*/)
             {
                 //Log the error
                 ModelState.AddModelError("", "Unable to save changes.  Try again.  If the problem persists...uhhhh...try to fix it?");
@@ -133,7 +134,7 @@ namespace JobHunter.Controllers
                     db.SaveChanges();
                     return RedirectToAction("Index");
                 }
-                catch (DataException)
+                catch (RetryLimitExceededException)
                 {
                     ModelState.AddModelError("", "Unable to Save changes...You should probably give up");
                 }
@@ -172,7 +173,7 @@ namespace JobHunter.Controllers
                 db.Companies.Remove(company);
                 db.SaveChanges();
             }
-            catch (DataException)
+            catch (RetryLimitExceededException)
             {
                 return RedirectToAction("Delete", new { id = id, saveChangesError = true });
             }

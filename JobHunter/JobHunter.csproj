@@ -139,6 +139,7 @@
     <Compile Include="Controllers\CompanyController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="DAL\HunterInitializer.cs" />
+    <Compile Include="DAL\JobHunterConfiguration.cs" />
     <Compile Include="DAL\JobHunterContext.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
